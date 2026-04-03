@@ -24,9 +24,15 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 # --- DATA FETCHING ---
 @st.cache_data(ttl=3600)
 def get_market_data():
-    spy = yf.Ticker("SPY")
+    # This header helps bypass the Yahoo "Rate Limit" block
+    import requests
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0'})
+    
+    spy = yf.Ticker("SPY", session=session)
     df = spy.history(period="1mo")
     return df
+
 
 data = get_market_data()
 latest_price = data['Close'].iloc[-1]
