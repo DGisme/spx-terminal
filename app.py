@@ -24,14 +24,23 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 # --- DATA FETCHING ---
 @st.cache_data(ttl=3600)
 def get_market_data():
-    # This header helps bypass the Yahoo "Rate Limit" block
     import requests
+    # This 'User-Agent' makes the request look like it's coming from a normal Safari browser
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+    }
     session = requests.Session()
-    session.headers.update({'User-Agent': 'Mozilla/5.0'})
+    session.headers.update(headers)
     
     spy = yf.Ticker("SPY", session=session)
     df = spy.history(period="1mo")
+    
+    # Safety check: If Yahoo still blocks us, this prevents the app from crashing
+    if df.empty:
+        st.error("Yahoo Finance is currently rate-limiting the cloud server. Retrying in 10 seconds...")
+        return None
     return df
+
 
 
 data = get_market_data()
